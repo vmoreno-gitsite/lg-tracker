@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leafy Green — Transformation Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#F5F6F7;}
+.root{background:#F5F6F7;min-height:600px;padding-bottom:28px;}
+.hdr{background:#051C2C;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.hdr-left h1{font-family:'EB Garamond',serif;font-size:18px;font-weight:400;color:#fff;}
+.hdr-left p{font-size:9px;color:#7A9BB5;margin-top:2px;letter-spacing:.06em;text-transform:uppercase;}
+.hdr-right{display:flex;gap:6px;align-items:center;}
+.tab-btn{padding:6px 14px;font-size:11px;border-radius:3px;border:1px solid #ffffff22;background:transparent;color:#7A9BB5;cursor:pointer;transition:all .15s;letter-spacing:.03em;}
+.tab-btn.active{background:#fff;color:#051C2C;font-weight:500;border-color:#fff;}
+.sync-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:3px;font-size:10px;font-weight:500;border:1px solid #34D39944;color:#34D399;transition:all .3s;}
+.sync-badge.syncing{color:#F59E0B;border-color:#F59E0B44;}
+.sync-badge.error{color:#F87171;border-color:#F8717144;}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.fin-bar{background:#fff;border-bottom:1px solid #E2E8F0;padding:12px 24px;}
+.fin-title{font-size:9px;color:#94A3B8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.fin-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.fin-card{border-radius:3px;padding:10px 12px;border-left:3px solid var(--ac);}
+.fin-card-label{font-size:9px;color:#64748B;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;}
+.fin-card-val{font-size:17px;font-weight:500;color:var(--ac);line-height:1.1;}
+.fin-card-sub{font-size:10px;color:#94A3B8;margin-top:2px;}
+.body{display:grid;grid-template-columns:200px 1fr;background:#fff;}
+.sidebar{border-right:1px solid #E2E8F0;padding:12px 0;overflow-y:auto;max-height:560px;}
+.sidebar-title{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#94A3B8;padding:0 14px;margin-bottom:6px;}
+.h-toggle{display:flex;align-items:center;gap:7px;padding:6px 14px;cursor:pointer;border-left:3px solid transparent;transition:background .1s;}
+.h-toggle:hover{background:#F8FAFC;}
+.h-toggle.on{border-left-color:var(--hc);}
+.h-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.h-name{font-size:11px;color:#334155;font-weight:500;}
+.h-sub{font-size:9px;color:#94A3B8;}
+.h-count{margin-left:auto;font-size:9px;background:#F1F5F9;color:#64748B;padding:1px 5px;border-radius:7px;}
+.divider{height:1px;background:#F1F5F9;margin:6px 14px;}
+.init-item{padding:6px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .1s;}
+.init-item:hover{background:#F8FAFC;}
+.init-item.selected{background:#EFF6FF;border-left-color:#1F5C98;}
+.init-name{font-size:10.5px;color:#1E293B;font-weight:500;line-height:1.3;}
+.init-meta{display:flex;align-items:center;gap:3px;margin-top:2px;flex-wrap:wrap;}
+.badge{font-size:8.5px;padding:1px 5px;border-radius:2px;font-weight:500;}
+.rag-dot-sm{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-left:auto;}
+.main-panel{padding:16px 18px 0;overflow:hidden;}
+.section-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px;}
+.gantt-scroll{overflow-x:auto;}
+.gantt-row-g{display:flex;align-items:center;min-height:30px;border-bottom:1px solid #F8FAFC;cursor:pointer;transition:background .1s;}
+.gantt-row-g:hover{background:#F8FAFC;}
+.gantt-row-g.selected{background:#EFF6FF;}
+.form-wrap{background:#fff;border:1px solid #E2E8F0;border-radius:4px;overflow:hidden;margin-top:14px;}
+.form-hdr{background:#1F5C98;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.form-hdr-name{font-size:13px;font-weight:500;color:#fff;font-family:'EB Garamond',serif;}
+.form-hdr-sub{font-size:10px;color:#93C5FD;}
+.form-body{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-field{display:flex;flex-direction:column;gap:4px;}
+.form-field.full{grid-column:1/-1;}
+.form-label{font-size:9px;color:#64748B;letter-spacing:.08em;text-transform:uppercase;font-weight:500;}
+.form-input{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:3px;padding:7px 10px;font-size:12px;color:#1E293B;outline:none;transition:border .15s;font-family:'DM Sans',sans-serif;}
+.form-input:focus{border-color:#1F5C98;background:#fff;}
+textarea.form-input{resize:vertical;min-height:54px;line-height:1.5;}
+.rag-select{display:flex;gap:6px;}
+.rag-opt{flex:1;padding:6px 0;text-align:center;border-radius:3px;font-size:11px;font-weight:500;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.rag-opt.R{background:#FEE2E2;color:#DC2626;}
+.rag-opt.A{background:#FEF3C7;color:#D97706;}
+.rag-opt.G{background:#D1FAE5;color:#059669;}
+.rag-opt.R.sel{border-color:#DC2626;}
+.rag-opt.A.sel{border-color:#D97706;}
+.rag-opt.G.sel{border-color:#059669;}
+.progress-wrap{display:flex;align-items:center;gap:10px;}
+.progress-val{font-size:13px;font-weight:500;color:#1F5C98;min-width:32px;}
+.progress-track{flex:1;height:6px;background:#E2E8F0;border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:#1F5C98;border-radius:3px;transition:width .2s;}
+input[type=range]{width:100%;accent-color:#1F5C98;}
+.submit-btn{background:#1F5C98;color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s;letter-spacing:.03em;display:flex;align-items:center;gap:6px;}
+.submit-btn:hover:not(:disabled){background:#174a7c;}
+.submit-btn:disabled{background:#94A3B8;cursor:not-allowed;}
+.form-footer{padding:10px 16px;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.form-footer-hint{font-size:10px;color:#94A3B8;}
+.history-section{margin-top:14px;}
+.history-item{background:#fff;border:1px solid #E2E8F0;border-radius:4px;margin-bottom:8px;overflow:hidden;}
+.history-hdr{padding:8px 14px;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border-bottom:1px solid #F1F5F9;}
+.history-date{font-size:10px;font-weight:500;color:#475569;}
+.history-rag{font-size:9px;font-weight:500;padding:2px 8px;border-radius:2px;}
+.history-body{padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.history-field-label{font-size:9px;color:#94A3B8;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;}
+.history-field-val{font-size:11.5px;color:#334155;line-height:1.55;}
+.review-wrap{padding:16px 20px;}
+.review-title{font-family:'EB Garamond',serif;font-size:17px;font-weight:400;color:#051C2C;margin-bottom:4px;}
+.review-sub{font-size:11px;color:#94A3B8;margin-bottom:14px;}
+.rag-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.rag-card{border-radius:3px;padding:12px 14px;text-align:center;}
+.rag-card-val{font-size:26px;font-weight:300;line-height:1;}
+.rag-card-lbl{font-size:10px;margin-top:3px;letter-spacing:.05em;text-transform:uppercase;font-weight:500;}
+.review-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.review-table th{font-size:9px;color:#94A3B8;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:2px solid #E2E8F0;font-weight:500;}
+.review-table td{padding:9px 10px;border-bottom:1px solid #F1F5F9;color:#334155;vertical-align:top;}
+.review-table tr:hover td{background:#F8FAFC;}
+.rag-pill{display:inline-block;font-size:9px;font-weight:500;padding:2px 8px;border-radius:2px;}
+.prog-mini{height:4px;border-radius:2px;background:#E2E8F0;overflow:hidden;margin-top:4px;}
+.prog-mini-fill{height:100%;border-radius:2px;}
+.no-update{font-size:10px;color:#CBD5E1;font-style:italic;}
+.action-btn{background:#051C2C;color:#fff;border:none;border-radius:3px;padding:7px 14px;font-size:11px;cursor:pointer;letter-spacing:.03em;transition:background .15s;}
+.action-btn:hover{background:#0F3456;}
+.notion-link{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#1F5C98;text-decoration:none;padding:4px 10px;border:1px solid #DBEAFE;border-radius:3px;background:#fff;transition:all .15s;}
+.notion-link:hover{background:#EFF6FF;}
+.toast{position:fixed;bottom:20px;right:20px;background:#051C2C;color:#fff;padding:10px 16px;border-radius:4px;font-size:12px;display:none;align-items:center;gap:8px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.toast.show{display:flex;}
+.toast.success{background:#059669;}
+.toast.error{background:#DC2626;}
+.spinner{width:13px;height:13px;border:2px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="root">
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>Leafy Green Produce — Transformation Tracker</h1>
+    <p>ABC Capital Partners · Weekly Progress Dashboard · Notion connected</p>
+  </div>
+  <div class="hdr-right">
+    <div class="sync-badge" id="sync-badge"><div class="sdot"></div><span id="sync-label">Ready</span></div>
+    <button class="tab-btn active" onclick="switchTab('roadmap')">Roadmap</button>
+    <button class="tab-btn" onclick="switchTab('review')">Consultant Review</button>
+  </div>
+</div>
+
+<div class="fin-bar">
+  <div class="fin-title">Financial impact summary</div>
+  <div class="fin-cards">
+    <div class="fin-card" style="background:#051C2C10;--ac:#051C2C;"><div class="fin-card-label">Total est. impact</div><div class="fin-card-val">$29–51M</div><div class="fin-card-sub">Across all 3 horizons</div></div>
+    <div class="fin-card" style="background:#EFF6FF;--ac:#0EA5E9;"><div class="fin-card-label">H1 · Stabilize (0–60d)</div><div class="fin-card-val">$5–10M</div><div class="fin-card-sub">Cash recovery + labor</div></div>
+    <div class="fin-card" style="background:#EFF6FF;--ac:#1F5C98;"><div class="fin-card-label">H2 · Optimize (60–180d)</div><div class="fin-card-val">$7–16M</div><div class="fin-card-sub">Throughput + efficiency</div></div>
+    <div class="fin-card" style="background:#F0F9FF;--ac:#0F4C75;"><div class="fin-card-label">H3 · Scale (180d+)</div><div class="fin-card-val">$17–25M</div><div class="fin-card-sub">Footprint + margin + ERP</div></div>
+  </div>
+</div>
+
+<div id="tab-roadmap">
+  <div class="body">
+    <div class="sidebar">
+      <div class="sidebar-title">Horizons</div>
+      <div class="h-toggle on" data-h="0" style="--hc:#0EA5E9;" onclick="toggleH(0)"><div class="h-dot" style="background:#0EA5E9;"></div><div><div class="h-name">H1 · Stabilize</div><div class="h-sub">0–60 days</div></div><div class="h-count" id="hc0">4</div></div>
+      <div class="h-toggle on" data-h="1" style="--hc:#1F5C98;" onclick="toggleH(1)"><div class="h-dot" style="background:#1F5C98;"></div><div><div class="h-name">H2 · Optimize</div><div class="h-sub">60–180 days</div></div><div class="h-count" id="hc1">4</div></div>
+      <div class="h-toggle on" data-h="2" style="--hc:#0F4C75;" onclick="toggleH(2)"><div class="h-dot" style="background:#0F4C75;"></div><div><div class="h-name">H3 · Scale</div><div class="h-sub">180d+</div></div><div class="h-count" id="hc2">4</div></div>
+      <div class="divider"></div>
+      <div class="sidebar-title">Select initiative</div>
+      <div id="init-list"></div>
+    </div>
+    <div class="main-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+        <div class="section-label" style="margin-bottom:0;">Roadmap — click an initiative to log a weekly update</div>
+        <a class="notion-link" href="https://www.notion.so/3241622a724c810a8537c85b1d0757fe" target="_blank">Open in Notion ↗</a>
+      </div>
+      <div class="gantt-scroll"><div id="gantt-area"></div></div>
+      <div id="form-area"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-review" style="display:none;">
+  <div class="review-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <div><div class="review-title">Weekly Progress Review</div><div class="review-sub">Consolidated view · latest update per initiative · synced with Notion</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <a class="notion-link" href="https://www.notion.so/3e7452fbd16d42ce983a24e76088faa4" target="_blank">Full database in Notion ↗</a>
+        <button class="action-btn" onclick="generateSummary()">Generate executive summary</button>
+      </div>
+    </div>
+    <div class="rag-summary" id="rag-summary"></div>
+    <table class="review-table">
+      <thead><tr>
+        <th style="width:170px;">Initiative</th><th style="width:55px;">Status</th><th style="width:65px;">Progress</th>
+        <th>Actions this week</th><th>Blockers</th><th style="width:90px;">Financial impact</th><th style="width:70px;">Updated</th>
+      </tr></thead>
+      <tbody id="review-tbody"></tbody>
+    </table>
+    <div id="summary-output" style="margin-top:20px;"></div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"><div class="spinner" id="toast-spin" style="display:none;"></div><span id="toast-msg"></span></div>
+
+<script>
+const WORKER_URL  = 'https://lg-tracker-theta.vercel.app/api/notion';
+const DB_ID       = '3e7452fbd16d42ce983a24e76088faa4';
+const NOTION_HUB  = 'https://www.notion.so/3241622a724c810a8537c85b1d0757fe';
+
+const HC={0:'#0EA5E9',1:'#1F5C98',2:'#0F4C75'};
+const TC={'Quick win':'#0EA5E9','Risk mitigation':'#DC2626','Strategic':'#1F5C98','Transformational':'#0F4C75'};
+const RAGC={
+  R:{bg:'#FEE2E2',col:'#DC2626',label:'Off track',notion:'Red — Off track'},
+  A:{bg:'#FEF3C7',col:'#D97706',label:'At risk',   notion:'Amber — At risk'},
+  G:{bg:'#D1FAE5',col:'#059669',label:'On track',  notion:'Green — On track'}
+};
+const COL_W=50;
+const MONTHS=['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12','M13-18'];
+
+const DATA=[
+  {id:0,h:0,label:'Purge expired inventory',      start:0,end:1, type:'Quick win',       horizon:'H1 · Stabilize',owners:['CFO','COO'],impact:'$2–4M'},
+  {id:1,h:0,label:'FIFO/FEFO controls',            start:0,end:1, type:'Quick win',       horizon:'H1 · Stabilize',owners:['COO'],      impact:'Ongoing'},
+  {id:2,h:0,label:'Labor utilization study',       start:0,end:1, type:'Quick win',       horizon:'H1 · Stabilize',owners:['COO','CFO'],impact:'$3–6M'},
+  {id:3,h:0,label:'Floor safety & compliance',     start:0,end:2, type:'Risk mitigation', horizon:'H1 · Stabilize',owners:['COO'],      impact:'Risk avoidance'},
+  {id:4,h:1,label:'Standardize SOPs',              start:2,end:6, type:'Strategic',       horizon:'H2 · Optimize', owners:['COO','CEO'],impact:'$2–5M'},
+  {id:5,h:1,label:'Unified KPI dashboard',         start:2,end:5, type:'Strategic',       horizon:'H2 · Optimize', owners:['CTO','CFO'],impact:'$1–2M'},
+  {id:6,h:1,label:'Lean flow redesign',            start:4,end:8, type:'Strategic',       horizon:'H2 · Optimize', owners:['COO'],      impact:'$3–6M'},
+  {id:7,h:1,label:'Racking optimization',          start:3,end:6, type:'Strategic',       horizon:'H2 · Optimize', owners:['COO','CFO'],impact:'$1–3M'},
+  {id:8,h:2,label:'ERP consolidation',             start:6,end:12,type:'Transformational',horizon:'H3 · Scale',    owners:['CTO','CFO','CEO'],impact:'$3–5M'},
+  {id:9,h:2,label:'Footprint rationalization',     start:6,end:12,type:'Transformational',horizon:'H3 · Scale',    owners:['CEO','CFO'],impact:'$5–10M'},
+  {id:10,h:2,label:'Customer P&L rationalization', start:7,end:10,type:'Strategic',       horizon:'H3 · Scale',    owners:['CEO','CFO'],impact:'$3–5M'},
+  {id:11,h:2,label:'Vendor consolidation',         start:8,end:11,type:'Strategic',       horizon:'H3 · Scale',    owners:['COO','CFO'],impact:'$2–5M'},
+];
+
+let visible={0:true,1:true,2:true};
+let selId=null;
+let formState={rag:'G',progress:0,actions:'',blockers:'',financial:''};
+let allUpdates={};
+let saving=false;
+
+function toast(msg,type='',spin=false,dur=3000){
+  const t=document.getElementById('toast'),m=document.getElementById('toast-msg'),s=document.getElementById('toast-spin');
+  t.className='toast show'+(type?' '+type:'');
+  m.textContent=msg; s.style.display=spin?'flex':'none';
+  if(dur>0) setTimeout(()=>t.classList.remove('show'),dur);
+}
+function toastOff(){ document.getElementById('toast').classList.remove('show'); }
+
+function badge(state,label){
+  const b=document.getElementById('sync-badge'),l=document.getElementById('sync-label');
+  b.className='sync-badge'+(state?' '+state:''); l.textContent=label;
+}
+
+function saveLocal(){ try{ localStorage.setItem('lg_updates',JSON.stringify(allUpdates)); }catch(e){} }
+function loadLocal(){ try{ const s=localStorage.getItem('lg_updates'); if(s) allUpdates=JSON.parse(s); }catch(e){} }
+
+async function writeToNotion(d, entry){
+  const today = new Date().toISOString().split('T')[0];
+  const payload = {
+    parent: { database_id: DB_ID },
+    properties: {
+      Initiative:  { title: [{ text: { content: d.label } }] },
+      Horizon:     { select: { name: d.horizon } },
+      'RAG Status':{ select: { name: RAGC[entry.rag].notion } },
+      '% Completion': { number: entry.progress },
+      'Actions Completed This Week': { rich_text: [{ text: { content: entry.actions||'' } }] },
+      'Blockers or Risks Flagged':   { rich_text: [{ text: { content: entry.blockers||'' } }] },
+      'Financial Impact to Date':    { rich_text: [{ text: { content: entry.financial||'' } }] },
+      'Initiative Type': { select: { name: d.type } },
+      'C-Suite Owners':  { multi_select: d.owners.map(o=>({ name: o })) },
+      Week: { date: { start: today } },
+    }
+  };
+  const res = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if(data.object === 'error') throw new Error(data.message);
+  return data;
+}
+
+function getLatest(id){ const l=allUpdates[id]; return l&&l.length?l[l.length-1]:null; }
+function getHistory(id){ return allUpdates[id]||[]; }
+function renderAll(){ renderList(); renderGantt(); renderForm(); renderReview(); }
+
+function renderList(){
+  const el=document.getElementById('init-list'); el.innerHTML='';
+  DATA.forEach(d=>{
+    if(!visible[d.h]) return;
+    const lat=getLatest(d.id);
+    const div=document.createElement('div');
+    div.className='init-item'+(d.id===selId?' selected':'');
+    div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
+      <div class="init-name">${d.label}</div>
+      <div class="rag-dot-sm" style="background:${lat?RAGC[lat.rag].col:'#E2E8F0'};margin-top:3px;"></div>
+    </div>
+    <div class="init-meta">
+      <span class="badge" style="background:${TC[d.type]}18;color:${TC[d.type]};">${d.type}</span>
+      ${lat?`<span class="badge" style="background:${RAGC[lat.rag].bg};color:${RAGC[lat.rag].col};">${lat.progress}%</span>`:'<span class="badge" style="background:#F1F5F9;color:#94A3B8;">No update</span>'}
+    </div>`;
+    div.onclick=()=>selectInit(d.id);
+    el.appendChild(div);
+  });
+}
+
+function renderGantt(){
+  const area=document.getElementById('gantt-area');
+  const vis=DATA.filter(d=>visible[d.h]);
+  const totalW=Math.max(500,MONTHS.length*COL_W+164);
+  let h=`<div style="width:${totalW}px;">`;
+  h+=`<div style="display:flex;margin-bottom:3px;padding-left:158px;">`;
+  MONTHS.forEach((m,i)=>{
+    const col=i<2?'#0EA5E9':i<6?'#1F5C98':'#0F4C75';
+    const bg=i<2?'#EFF6FF':i<6?'#DBEAFE':'#BFDBFE';
+    h+=`<div style="width:${COL_W}px;flex-shrink:0;text-align:center;font-size:8.5px;font-weight:500;color:${col};background:${bg};padding:3px 0;border-right:1px solid #fff;">${m}</div>`;
+  });
+  h+=`</div><div style="display:flex;margin-bottom:6px;padding-left:158px;">`;
+  h+=`<div style="width:${2*COL_W}px;flex-shrink:0;text-align:center;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#0EA5E9;font-weight:500;">H1 · Stabilize</div>`;
+  h+=`<div style="width:${4*COL_W}px;flex-shrink:0;text-align:center;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#1F5C98;font-weight:500;">H2 · Optimize</div>`;
+  h+=`<div style="width:${7*COL_W}px;flex-shrink:0;text-align:center;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#0F4C75;font-weight:500;">H3 · Scale</div>`;
+  h+=`</div>`;
+  vis.forEach(d=>{
+    const isSel=d.id===selId, lat=getLatest(d.id);
+    const bL=d.start*COL_W, bW=(d.end-d.start)*COL_W;
+    h+=`<div class="gantt-row-g${isSel?' selected':''}" onclick="selectInit(${d.id})" style="border-left:3px solid ${isSel?'#1F5C98':'transparent'};">`;
+    h+=`<div style="width:158px;flex-shrink:0;padding:0 8px 0 5px;display:flex;align-items:center;gap:5px;">
+      <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${lat?RAGC[lat.rag].col:'#E2E8F0'};"></div>
+      <div style="font-size:10px;color:#334155;font-weight:500;line-height:1.3;">${d.label}</div>
+    </div>`;
+    h+=`<div style="flex:1;position:relative;height:30px;">`;
+    for(let i=0;i<MONTHS.length;i++){
+      const lc=i===2||i===6?'#CBD5E1':'#F1F5F9';
+      h+=`<div style="position:absolute;left:${i*COL_W}px;top:0;bottom:0;width:${i===2||i===6?2:1}px;background:${lc};"></div>`;
+    }
+    h+=`<div style="position:absolute;left:${bL}px;top:6px;height:17px;width:${bW-3}px;background:${HC[d.h]};border-radius:2px;display:flex;align-items:center;padding:0 6px;font-size:8.5px;font-weight:500;color:#fff;overflow:hidden;white-space:nowrap;">`;
+    if(lat){
+      h+=`<div style="position:absolute;left:0;top:0;height:100%;width:${lat.progress}%;background:rgba(255,255,255,0.25);border-radius:2px 0 0 2px;"></div>`;
+      h+=`<span style="position:relative;z-index:1;">${d.impact} · ${lat.progress}%</span>`;
+    } else { h+=`${d.impact} · ${d.owners.join('/')}`; }
+    h+=`</div></div></div>`;
+  });
+  h+=`</div>`; area.innerHTML=h;
+}
+
+function renderForm(){
+  const area=document.getElementById('form-area');
+  if(selId===null){area.innerHTML='';return;}
+  const d=DATA.find(x=>x.id===selId);
+  const history=getHistory(selId);
+  const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  let hist='';
+  if(history.length){
+    hist=`<div class="history-section"><div class="section-label">${history.length} saved ${history.length===1?'entry':'entries'} — synced with Notion</div>`;
+    [...history].reverse().forEach(u=>{
+      const rc=RAGC[u.rag];
+      hist+=`<div class="history-item">
+        <div class="history-hdr"><span class="history-date">${u.date}</span><span class="history-rag" style="background:${rc.bg};color:${rc.col};">${rc.label} · ${u.progress}%</span></div>
+        <div class="history-body">
+          <div><div class="history-field-label">Actions completed</div><div class="history-field-val">${u.actions||'—'}</div></div>
+          <div><div class="history-field-label">Blockers flagged</div><div class="history-field-val">${u.blockers||'—'}</div></div>
+          <div style="grid-column:1/-1;"><div class="history-field-label">Financial impact</div><div class="history-field-val">${u.financial||'—'}</div></div>
+        </div></div>`;
+    });
+    hist+=`</div>`;
+  }
+  area.innerHTML=`
+    <div class="form-wrap">
+      <div class="form-hdr">
+        <div><div class="form-hdr-name">${d.label}</div><div class="form-hdr-sub">Weekly update · ${today} · Saves directly to Notion</div></div>
+        <div style="display:flex;gap:5px;">
+          <span class="badge" style="background:#ffffff22;color:#fff;font-size:9px;">${d.impact}</span>
+          <span class="badge" style="background:#ffffff22;color:#fff;font-size:9px;">${d.owners.join(' / ')}</span>
+        </div>
+      </div>
+      <div class="form-body">
+        <div class="form-field full"><label class="form-label">RAG status</label>
+          <div class="rag-select">
+            <div class="rag-opt R${formState.rag==='R'?' sel':''}" onclick="setRag('R')">Red — Off track</div>
+            <div class="rag-opt A${formState.rag==='A'?' sel':''}" onclick="setRag('A')">Amber — At risk</div>
+            <div class="rag-opt G${formState.rag==='G'?' sel':''}" onclick="setRag('G')">Green — On track</div>
+          </div>
+        </div>
+        <div class="form-field full"><label class="form-label">% Completion</label>
+          <div class="progress-wrap">
+            <input type="range" min="0" max="100" step="5" value="${formState.progress}" oninput="setProgress(this.value)" style="flex:1;">
+            <div class="progress-val" id="prog-val">${formState.progress}%</div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:${formState.progress}%;"></div></div>
+        </div>
+        <div class="form-field full"><label class="form-label">Key actions completed this week</label>
+          <textarea class="form-input" id="f-actions" placeholder="e.g. Completed warehouse count at Site 1, trained 12 staff on FIFO procedure...">${formState.actions}</textarea>
+        </div>
+        <div class="form-field"><label class="form-label">Blockers or risks flagged</label>
+          <textarea class="form-input" id="f-blockers" placeholder="e.g. Awaiting contractor quote for floor repairs...">${formState.blockers}</textarea>
+        </div>
+        <div class="form-field"><label class="form-label">Financial impact to date</label>
+          <input type="text" class="form-input" id="f-financial" placeholder="e.g. $340K inventory recovered" value="${formState.financial}">
+        </div>
+      </div>
+      <div class="form-footer">
+        <span class="form-footer-hint">Saves directly to Notion · visible in Programme Hub immediately</span>
+        <button class="submit-btn" id="submit-btn" onclick="submitUpdate()">Save to Notion</button>
+      </div>
+    </div>${hist}`;
+}
+
+function setRag(r){ formState.rag=r; renderForm(); }
+function setProgress(v){
+  formState.progress=parseInt(v);
+  const pv=document.getElementById('prog-val'),pf=document.getElementById('prog-fill');
+  if(pv) pv.textContent=v+'%'; if(pf) pf.style.width=v+'%';
+}
+
+async function submitUpdate(){
+  if(saving) return;
+  saving=true;
+  const btn=document.getElementById('submit-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Saving…'; }
+  const d=DATA.find(x=>x.id===selId);
+  const entry={
+    date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    rag:formState.rag, progress:formState.progress,
+    actions: document.getElementById('f-actions')?.value||'',
+    blockers:document.getElementById('f-blockers')?.value||'',
+    financial:document.getElementById('f-financial')?.value||'',
+  };
+  badge('syncing','Saving…');
+  toast('Saving to Notion…','',true,0);
+  try{
+    await writeToNotion(d, entry);
+    if(!allUpdates[selId]) allUpdates[selId]=[];
+    allUpdates[selId].push(entry);
+    saveLocal();
+    badge('','Notion synced');
+    toastOff();
+    toast('Saved to Notion','success',false,3000);
+    formState={rag:'G',progress:formState.progress,actions:'',blockers:'',financial:''};
+  } catch(e){
+    if(!allUpdates[selId]) allUpdates[selId]=[];
+    allUpdates[selId].push(entry);
+    saveLocal();
+    badge('error','Save failed');
+    toastOff();
+    toast('Save failed — check Vercel & Notion token','error',false,6000);
+    console.error('Notion error:',e);
+  }
+  saving=false;
+  renderAll();
+}
+
+function renderReview(){
+  const tbody=document.getElementById('review-tbody'),ragSum=document.getElementById('rag-summary');
+  if(!tbody||!ragSum) return;
+  let c={R:0,A:0,G:0};
+  DATA.forEach(d=>{ const l=getLatest(d.id); if(l) c[l.rag]++; });
+  ragSum.innerHTML=`
+    <div class="rag-card" style="background:#D1FAE5;"><div class="rag-card-val" style="color:#059669;">${c.G}</div><div class="rag-card-lbl" style="color:#059669;">On track</div></div>
+    <div class="rag-card" style="background:#FEF3C7;"><div class="rag-card-val" style="color:#D97706;">${c.A}</div><div class="rag-card-lbl" style="color:#D97706;">At risk</div></div>
+    <div class="rag-card" style="background:#FEE2E2;"><div class="rag-card-val" style="color:#DC2626;">${c.R}</div><div class="rag-card-lbl" style="color:#DC2626;">Off track</div></div>`;
+  tbody.innerHTML=DATA.map(d=>{
+    const l=getLatest(d.id),rc=l?RAGC[l.rag]:null;
+    return `<tr>
+      <td><div style="font-weight:500;color:#1E293B;font-size:11px;">${d.label}</div><div style="font-size:9px;color:#94A3B8;margin-top:2px;">${d.owners.join(' / ')}</div></td>
+      <td>${l?`<span class="rag-pill" style="background:${rc.bg};color:${rc.col};">${rc.label}</span>`:`<span class="no-update">No update</span>`}</td>
+      <td>${l?`<div style="font-size:11px;font-weight:500;color:#1F5C98;">${l.progress}%</div><div class="prog-mini"><div class="prog-mini-fill" style="width:${l.progress}%;background:${HC[d.h]};"></div></div>`:`<span class="no-update">—</span>`}</td>
+      <td style="font-size:11px;color:#475569;">${l&&l.actions?l.actions:`<span class="no-update">—</span>`}</td>
+      <td style="font-size:11px;color:#DC2626;">${l&&l.blockers?l.blockers:`<span style="color:#94A3B8;font-size:10px;font-style:italic;">None</span>`}</td>
+      <td style="font-size:11px;color:#059669;font-weight:500;">${l&&l.financial?l.financial:`<span class="no-update">—</span>`}</td>
+      <td style="font-size:10px;color:#94A3B8;">${l?l.date:`<span class="no-update">—</span>`}</td>
+    </tr>`;
+  }).join('');
+}
+
+function generateSummary(){
+  const el=document.getElementById('summary-output');
+  let c={R:0,A:0,G:0,none:0};
+  DATA.forEach(d=>{ const l=getLatest(d.id); if(l) c[l.rag]++; else c.none++; });
+  const red=DATA.filter(d=>{ const l=getLatest(d.id); return l&&l.rag==='R'; });
+  const amb=DATA.filter(d=>{ const l=getLatest(d.id); return l&&l.rag==='A'; });
+  const blk=DATA.filter(d=>{ const l=getLatest(d.id); return l&&l.blockers; });
+  el.innerHTML=`<div style="background:#EFF6FF;border-left:3px solid #1F5C98;border-radius:3px;padding:14px 16px;">
+    <div style="font-size:11px;font-weight:500;color:#1F5C98;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">Executive summary</div>
+    <div style="font-size:13px;color:#1E293B;line-height:1.75;">
+      <strong>Programme health:</strong> ${c.G} of ${DATA.length} on track · ${c.A} at risk · ${c.R} off track · ${c.none} pending first update.<br><br>
+      ${red.length?`<strong>Requires immediate attention:</strong> ${red.map(d=>d.label).join(', ')}.<br><br>`:''}
+      ${amb.length?`<strong>Monitor closely:</strong> ${amb.map(d=>d.label).join(', ')}.<br><br>`:''}
+      ${blk.length?`<strong>Active blockers:</strong> ${blk.map(d=>`${d.label} — ${getLatest(d.id).blockers}`).join(' | ')}.<br><br>`:''}
+      <strong>Recommendation:</strong> Focus on ${red.length?red[0].label:amb.length?amb[0].label:'sustaining current momentum'} this week.
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <a class="notion-link" href="https://www.notion.so/3e7452fbd16d42ce983a24e76088faa4" target="_blank">Weekly Updates DB ↗</a>
+      <a class="notion-link" href="${NOTION_HUB}" target="_blank">Programme Hub ↗</a>
+    </div>
+  </div>`;
+}
+
+function selectInit(id){
+  selId=id===selId?null:id;
+  formState={rag:'G',progress:0,actions:'',blockers:'',financial:''};
+  const lat=getLatest(id); if(lat) formState.progress=lat.progress;
+  renderAll();
+}
+
+function toggleH(h){
+  visible[h]=!visible[h];
+  document.querySelector(`[data-h="${h}"]`).classList.toggle('on',visible[h]);
+  [0,1,2].forEach(hh=>{ document.getElementById('hc'+hh).textContent=DATA.filter(d=>d.h===hh&&visible[hh]).length; });
+  renderList(); renderGantt();
+}
+
+function switchTab(t){
+  document.getElementById('tab-roadmap').style.display=t==='roadmap'?'block':'none';
+  document.getElementById('tab-review').style.display=t==='review'?'block':'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['roadmap','review'][i]===t));
+  if(t==='review') renderReview();
+}
+
+loadLocal();
+renderAll();
+badge('','Ready');
+</script>
+</body>
+</html>
